@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek Chatbot</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --primary-color: #bb86fc;
+            --secondary-color: #03dac6;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 800px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--card-color);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .chat-header {
+            background-color: rgba(30, 30, 30, 0.9);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            z-index: 10;
+        }
+        
+        .chat-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .user-message {
+            background-color: var(--primary-color);
+            color: #000;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .bot-message {
+            background-color: #333;
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .chat-input {
+            display: flex;
+            padding: 15px;
+            background-color: rgba(30, 30, 30, 0.9);
+            border-top: 1px solid #333;
+        }
+        
+        #message-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 25px;
+            background-color: #333;
+            color: var(--text-color);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        #message-input:focus {
+            background-color: #444;
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+        
+        #send-button {
+            background-color: var(--primary-color);
+            color: #000;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        
+        #send-button:hover {
+            background-color: #a370d8;
+            transform: scale(1.05);
+        }
+        
+        #send-button:active {
+            transform: scale(0.95);
+        }
+        
+        .typing-indicator {
+            display: flex;
+            padding: 12px 16px;
+            background-color: #333;
+            border-radius: 18px;
+            margin-right: auto;
+            margin-bottom: 15px;
+            width: fit-content;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-color);
+            border-radius: 50%;
+            margin: 0 3px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typingAnimation {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Arka plan animasyonları */
+        .bg-animation {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(187, 134, 252, 0.2);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            50% {
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(-500px) translateX(200px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation" id="bg-animation"></div>
+    
+    <div class="container">
+        <div class="chat-header">
+            <h1>DeepSeek Chatbot</h1>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message">
+                Merhaba! Ben DeepSeek API'si ile çalışan bir chatbotum. Size nasıl yardımcı olabilirim?
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Mesajınızı yazın..." autocomplete="off">
+            <button id="send-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Arka plan partikülleri oluştur
+        function createParticles() {
+            const bgAnimation = document.getElementById('bg-animation');
+            const particleCount = 20;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Rastgele boyut ve pozisyon
+                const size = Math.random() * 10 + 5;
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100 + 100;
+                const delay = Math.random() * 15;
+                const duration = Math.random() * 10 + 10;
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${posX}%`;
+                particle.style.top = `${posY}%`;
+                particle.style.animationDelay = `${delay}s`;
+                particle.style.animationDuration = `${duration}s`;
+                
+                bgAnimation.appendChild(particle);
+            }
+        }
+        
+        // Chat mesajı gönderme fonksiyonu
+        async function sendMessage() {
+  const input = document.getElementById('message-input');
+  const message = input.value.trim();
+  
+  if (!message) return;
+  
+  addMessage(message, 'user');
+  input.value = '';
+  showTypingIndicator();
+  
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: "Sen yardımcı bir AI asistanısın." },
+          { role: "user", content: message }
+        ]
+      }),
+    });
+    
+    const data = await response.json();
+    hideTypingIndicator();
+    
+    if (data.choices?.[0]?.message?.content) {
+      addMessage(data.choices[0].message.content, 'bot');
+    } else {
+      addMessage("Yanıt alınamadı, lütfen tekrar deneyin.", 'bot');
+    }
+  } catch (error) {
+    hideTypingIndicator();
+    addMessage("API bağlantı hatası.", 'bot');
+    console.error("Hata:", error);
+  }
+}
+        
+        // Mesaj ekleme fonksiyonu
+        function addMessage(content, sender) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', `${sender}-message`);
+            messageDiv.textContent = content;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Yazıyor göstergesi ekleme
+        function showTypingIndicator() {
+            const chatMessages = document.getElementById('chat-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.classList.add('typing-indicator');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Yazıyor göstergesini kaldırma
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+        
+        // Sayfa yüklendiğinde çalışacak kodlar
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            
+            // Gönder butonu ve Enter tuşu için event listener'lar
+            document.getElementById('send-button').addEventListener('click', sendMessage);
+            document.getElementById('message-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Input'a odaklan
+            document.getElementById('message-input').focus();
+        });
+    </script>
+</body>
+</html>
